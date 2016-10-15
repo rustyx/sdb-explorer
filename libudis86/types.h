@@ -27,28 +27,22 @@
 #define UD_TYPES_H
 
 #ifdef __KERNEL__
-  /* -D__KERNEL__ is automatically passed on the command line when
-     building something as part of the Linux kernel */
+  /* 
+   * -D__KERNEL__ is automatically passed on the command line when
+   * building something as part of the Linux kernel. Assume standalone
+   * mode.
+   */
 # include <linux/kernel.h>
 # include <linux/string.h>
 # ifndef __UD_STANDALONE__
 #  define __UD_STANDALONE__ 1
-#endif
+# endif
 #endif /* __KERNEL__ */
 
-#if defined(_MSC_VER) || defined(__BORLANDC__)
+#if !defined(__UD_STANDALONE__)
 # include <stdint.h>
 # include <stdio.h>
-# define inline __inline /* MS Visual Studio requires __inline 
-                            instead of inline for C code */
-#elif !defined(__UD_STANDALONE__)
-# include <stdio.h>
-# include <inttypes.h>
-#else /* !__UD_STANDALONE__ */
-# include <inttypes.h>
-# include <stddef.h>
-# include <stdarg.h>
-#endif /* __UD_STANDALONE__ */
+#endif
 
 /* gcc specific extensions */
 #ifdef __GNUC__
@@ -231,6 +225,7 @@ struct ud
   uint8_t   br_near;
   uint8_t   have_modrm;
   uint8_t   modrm;
+  uint8_t   modrm_offset;
   uint8_t   vex_op;
   uint8_t   vex_b1;
   uint8_t   vex_b2;

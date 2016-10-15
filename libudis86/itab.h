@@ -197,9 +197,12 @@ enum ud_mnemonic_code {
     UD_Ifldz,
     UD_Ifmul,
     UD_Ifmulp,
+    UD_Ifndisi,
+    UD_Ifneni,
     UD_Ifninit,
     UD_Ifnop,
     UD_Ifnsave,
+    UD_Ifnsetpm,
     UD_Ifnstcw,
     UD_Ifnstenv,
     UD_Ifnstsw,
@@ -209,6 +212,7 @@ enum ud_mnemonic_code {
     UD_Ifptan,
     UD_Ifrndint,
     UD_Ifrstor,
+    UD_Ifrstpm,
     UD_Ifscale,
     UD_Ifsin,
     UD_Ifsincos,
@@ -546,6 +550,7 @@ enum ud_mnemonic_code {
     UD_Ircr,
     UD_Irdmsr,
     UD_Irdpmc,
+    UD_Irdrand,
     UD_Irdtsc,
     UD_Irdtscp,
     UD_Irep,
@@ -709,11 +714,15 @@ enum ud_mnemonic_code {
     UD_Ivmovapd,
     UD_Ivmovaps,
     UD_Ivmovd,
+    UD_Ivmovddup,
+    UD_Ivmovdqa,
     UD_Ivmovdqu,
     UD_Ivmovhlps,
     UD_Ivmovhpd,
     UD_Ivmovhps,
     UD_Ivmovlhps,
+    UD_Ivmovlpd,
+    UD_Ivmovlps,
     UD_Ivmovmskpd,
     UD_Ivmovmskps,
     UD_Ivmovntdq,
@@ -862,6 +871,7 @@ enum ud_mnemonic_code {
     UD_Ivpunpckhwd,
     UD_Ivpunpcklbw,
     UD_Ivpunpckldq,
+    UD_Ivpunpcklqdq,
     UD_Ivpunpcklwd,
     UD_Ivpxor,
     UD_Ivrcpps,
@@ -922,7 +932,7 @@ enum ud_mnemonic_code {
     UD_Idb,
     UD_Ipause,
     UD_MAX_MNEMONIC_CODE
-} UD_ATTR_PACKED;
+};
 
 extern const char * ud_mnemonics_str[];
 
