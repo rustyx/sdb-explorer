@@ -74,6 +74,11 @@ extern SdbStartIndexing SdbStartIndexingPtr;
 extern SdbStopIndexing SdbStopIndexingPtr;
 extern SdbCommitIndexes SdbCommitIndexesPtr;
 
+static inline TAG SdbGetTagFromTagIDPtr2(PDB pdb, TAGID tiWhich)
+{
+  return SdbGetTagFromTagIDPtr(pdb, tiWhich) & 0xFFFF;
+}
+
 enum commands {
 	INVAILID_COMMAND,
 	PRINT_TREE,
@@ -453,7 +458,7 @@ void findPatchForChecksum(PDB db, TAGID tid, DWORD checksum, TAGID* found)
 	newtid = SdbGetFirstChildPtr(db, tid);
 	while (newtid != TAGID_NULL)
 	{
-		tmpTag = SdbGetTagFromTagIDPtr(db, newtid);
+		tmpTag = SdbGetTagFromTagIDPtr2(db, newtid);
 		tmp = SdbTagToStringPtr(tmpTag);
 
 		// process tag types
@@ -500,7 +505,7 @@ void printDlls(PDB db, TAGID tid)
 	newtid = SdbGetFirstChildPtr(db, tid);
 	while (newtid != TAGID_NULL)
 	{
-		tmpTag = SdbGetTagFromTagIDPtr(db, newtid);
+		tmpTag = SdbGetTagFromTagIDPtr2(db, newtid);
 		tmp = SdbTagToStringPtr(tmpTag);
 
 		// process tag types
@@ -567,7 +572,7 @@ void printLeaked(PDB db, TAGID tid, HANDLE leakF)
 	newtid = SdbGetFirstChildPtr(db, tid);
 	while (newtid != TAGID_NULL)
 	{
-		tmpTag = SdbGetTagFromTagIDPtr(db, newtid);
+		tmpTag = SdbGetTagFromTagIDPtr2(db, newtid);
 
 		// process tag types
 		switch (tmpTag)
@@ -689,7 +694,7 @@ void printTree(PDB db, TAGID tid, DWORD level)
 		wprintf(L"%x TAG %x - %s", newtid, tmpTag, tmp);
 
 		// process tag types
-		switch (tmpTag)
+		switch (tmpTag & 0xFFFF)
 		{
 		case TAG_DATABASE_ID:
 			if (SdbReadBinaryTagPtr(db, newtid, (PBYTE)&guid, sizeof(guid)))
@@ -727,7 +732,7 @@ void printTree(PDB db, TAGID tid, DWORD level)
 			foo = (unsigned char*)SdbGetBinaryTagDataPtr(db, newtid);
 			wprintf(L"\n");
 			break;
-		case TAG_INDEX_BITS:
+                case TAG_INDEX_BITS:
 			dwD = SdbGetTagDataSizePtr(db, newtid);
 			foo = (unsigned char*)SdbGetBinaryTagDataPtr(db, newtid);
 			wprintf(L"\n");
@@ -743,56 +748,42 @@ void printTree(PDB db, TAGID tid, DWORD level)
 			//exit(-1);
 
 			break;
+                case TAG_FLAGS:
+                  wprintf(L": %ws", SdbGetStringTagPtrPtr(db, newtid));
+                  break;
 
-			// dwords
-		case TAG_PATCH_TAGID:
-		case TAG_SHIM_TAGID:
-		case TAG_PE_CHECKSUM:
-		case TAG_CHECKSUM:
-		case TAG_DATA_DWORD:
-		case TAG_OS_PLATFORM:
-		case TAG_DESCRIPTION_RC_ID:
-		case TAG_INDEX_FLAGS:
-			dwD = SdbReadDWORDTagPtr(db, newtid, -1);
-			wprintf(L": %d (0x%x)", dwD, dwD);
-			break;
-
-			// words
-		case TAG_INDEX_KEY:
-		case TAG_INDEX_TAG:
-			dwD = SdbReadWORDTagPtr(db, newtid, -1);
-			wprintf(L": %d (0x%x)", dwD, dwD);
-			break;
-
-			// strings
-		case TAG_APP_NAME:
-		case TAG_COMPILER_VERSION:
-		case TAG_VENDOR:
-		case TAG_COMPANY_NAME:
-		case TAG_NAME:
-		case TAG_PRODUCT_NAME:
-		case TAG_PRODUCT_VERSION:
-		case TAG_STRINGTABLE_ITEM:
-		case TAG_MODULE:
-		case TAG_FILE_DESCRIPTION:
-		case TAG_COMMAND_LINE:
-		case TAG_DLLFILE:
-		case TAG_FLAGS:
-			wprintf(L": %ws", SdbGetStringTagPtrPtr(db, newtid));
-			break;
-
-			// quad word
-		case TAG_UPTO_BIN_PRODUCT_VERSION:
-		case TAG_UPTO_BIN_FILE_VERSION:
-		case TAG_BIN_FILE_VERSION:
-			quadword = SdbReadQWORDTagPtr(db, newtid, -1);
-			wprintf(L": %d.", ((short*)&quadword)[3]);
-			wprintf(L"%d.", ((short*)&quadword)[2]);
-			wprintf(L"%d.", ((short*)&quadword)[1]);
-			wprintf(L"%d", ((short*)&quadword)[0]);
-			break;
 
 		default:
+                  switch (tmpTag & 0xF000)
+                  {
+                    // dwords
+                  case TAG_TYPE_DWORD:
+                    dwD = SdbReadDWORDTagPtr(db, newtid, -1);
+                    wprintf(L": %d (0x%x)", dwD, dwD);
+                    break;
+
+                    // words
+                  case TAG_TYPE_WORD:
+                    dwD = SdbReadWORDTagPtr(db, newtid, -1);
+                    wprintf(L": %d (0x%x)", dwD, dwD);
+                    break;
+
+                    // strings
+                  case TAG_TYPE_STRING:
+                  case TAG_TYPE_STRINGREF:
+                    wprintf(L": %ws", SdbGetStringTagPtrPtr(db, newtid));
+                    break;
+
+                    // quad word
+                  case TAG_TYPE_QWORD:
+                    quadword = SdbReadQWORDTagPtr(db, newtid, -1);
+                    wprintf(L": %d.", ((short*)&quadword)[3]);
+                    wprintf(L"%d.", ((short*)&quadword)[2]);
+                    wprintf(L"%d.", ((short*)&quadword)[1]);
+                    wprintf(L"%d", ((short*)&quadword)[0]);
+                    break;
+
+                  }
 			break;
 		}
 
@@ -1015,7 +1006,7 @@ void dumpPatchBits(PDB db, TAGID patchbits)
 	size_t i;
 	unsigned char* buf;
 
-	tmpTag = SdbGetTagFromTagIDPtr(db, patchbits);
+	tmpTag = SdbGetTagFromTagIDPtr2(db, patchbits);
 	if (tmpTag != TAG_PATCH_BITS)
 	{
 		fatalError("dumpPatchBits called with a non-patchbit tag");
@@ -1065,7 +1056,7 @@ void dumpPatch(PDB db, TAGID patch)
 	TAGID patchbits = TAGID_NULL;
 	TAG tmpTag;
 
-	tmpTag = SdbGetTagFromTagIDPtr(db, patch);
+	tmpTag = SdbGetTagFromTagIDPtr2(db, patch);
 	if (tmpTag != TAG_PATCH)
 	{
 		fatalError("dumpPatch called with a non-patch tag");
@@ -1087,7 +1078,7 @@ void dumpPatchTagId(PDB db, TAGID patchtagid)
 	TAG tmpTag;
 	DWORD patch;
 
-	tmpTag = SdbGetTagFromTagIDPtr(db, patchtagid);
+	tmpTag = SdbGetTagFromTagIDPtr2(db, patchtagid);
 	if (tmpTag != TAG_PATCH_TAGID)
 	{
 		fatalError("dumpPatchTagId called with a non-patchtagid tag");
@@ -1108,7 +1099,7 @@ void dumpPatchRef(PDB db, TAGID patchref)
 	TAGID patchbinid = TAGID_NULL;
 	TAG tmpTag;
 
-	tmpTag = SdbGetTagFromTagIDPtr(db, patchref);
+	tmpTag = SdbGetTagFromTagIDPtr2(db, patchref);
 	if (tmpTag != TAG_PATCH_REF)
 	{
 		fatalError("dumpPatchRef called with a non-patchref tag");
@@ -1156,7 +1147,7 @@ void printPatchByTagId(PDB db, TAGID tid)
 	TAG tmpTag = 0;
 	LPCTSTR tmp;
 
-	tmpTag = SdbGetTagFromTagIDPtr(db, tid);
+	tmpTag = SdbGetTagFromTagIDPtr2(db, tid);
 	tmp = SdbTagToStringPtr(tmpTag);
 
 	printf("Trying to process patch by tag type: %S\n", tmp);
